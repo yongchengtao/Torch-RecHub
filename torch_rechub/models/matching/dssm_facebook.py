@@ -61,8 +61,8 @@ class FaceBookDSSM(torch.nn.Module):
     def user_tower(self, x):
         if self.mode == "item":
             return None
-        input_user = self.embedding(x, self.user_features, squeeze_dim=True)  #[batch_size, num_features*deep_dims]
-        user_embedding = self.user_mlp(input_user)  #[batch_size, user_params["dims"][-1]]
+        input_user = self.embedding(x, self.user_features, squeeze_dim=True)  # [batch_size, num_features*deep_dims]
+        user_embedding = self.user_mlp(input_user)  # [batch_size, user_params["dims"][-1]]
         user_embedding = F.normalize(user_embedding, p=2, dim=1)
         return user_embedding
 
@@ -70,7 +70,7 @@ class FaceBookDSSM(torch.nn.Module):
         if self.mode == "user":
             return None, None
         input_item_pos = self.embedding(x, self.pos_item_features, squeeze_dim=True)
-        if self.mode == "item":  #inference embedding mode, the zeros is just for placefolder
+        if self.mode == "item":  # inference embedding mode, the zeros is just for placefolder
             return self.item_mlp(input_item_pos), None
         input_item_neg = self.embedding(x, self.neg_item_features, squeeze_dim=True)
         pos_embedding, neg_embedding = self.item_mlp(input_item_pos), self.item_mlp(input_item_neg)
