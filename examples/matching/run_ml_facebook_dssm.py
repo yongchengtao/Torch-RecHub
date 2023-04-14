@@ -64,6 +64,7 @@ def get_movielens_data(data_path, load_cache=False):
     item_cols = ['movie_id', "cate_id"]
     # neg_cols = ["neg_items", "neg_cate"]
 
+    # 用户特征
     user_features = [SparseFeature(name, vocab_size=feature_max_idx[name], embed_dim=16) for name in user_cols]
 
     user_features += [
@@ -73,7 +74,10 @@ def get_movielens_data(data_path, load_cache=False):
                         pooling="mean",
                         shared_with="movie_id")
     ]
+    # item特征 ['movie_id', "cate_id"]
     item_features = [SparseFeature(name, vocab_size=feature_max_idx[name], embed_dim=16) for name in item_cols]
+
+    # 负样本item ['neg_items', "neg_cate"] 实际上就是负样本的['movie_id', "cate_id"]
     neg_item_features = [
         SparseFeature("neg_items", vocab_size=feature_max_idx["movie_id"], embed_dim=16),
         SparseFeature("neg_cate", vocab_size=feature_max_idx["cate_id"], embed_dim=16)
@@ -91,37 +95,38 @@ def main(dataset_path, model_name, epoch, learning_rate, batch_size, weight_deca
     user_features, item_features, neg_item_features, x_train, y_train, all_item, test_user = get_movielens_data(
         dataset_path)
 
-    # dg = MatchDataGenerator(x=x_train, y=y_train)
-    # model = FaceBookDSSM(user_features,
-    #                      item_features,
-    #                      neg_item_features,
-    #                      temperature=0.02,
-    #                      user_params={
-    #                          "dims": [256, 128, 64, 32],
-    #                      },
-    #                      item_params={
-    #                          "dims": [256, 128, 64, 32],
-    #                      })
-    #
-    # trainer = MatchTrainer(model,
-    #                        mode=1,
-    #                        optimizer_params={
-    #                            "lr": learning_rate,
-    #                            "weight_decay": weight_decay
-    #                        },
-    #                        n_epoch=epoch,
-    #                        device=device,
-    #                        model_path=save_dir)
-    #
-    # train_dl, test_dl, item_dl = dg.generate_dataloader(test_user, all_item, batch_size=batch_size)
-    # trainer.fit(train_dl)
-    #
-    # print("inference embedding")
-    # user_embedding = trainer.inference_embedding(model=model, mode="user", data_loader=test_dl, model_path=save_dir)
-    # item_embedding = trainer.inference_embedding(model=model, mode="item", data_loader=item_dl, model_path=save_dir)
-    # # torch.save(user_embedding.data.cpu(), save_dir + "user_embedding.pth")
-    # # torch.save(item_embedding.data.cpu(), save_dir + "item_embedding.pth")
-    # match_evaluation(user_embedding, item_embedding, test_user, all_item, topk=10)
+    dg = MatchDataGenerator(x=x_train, y=y_train)
+    # print(dg)
+    model = FaceBookDSSM(user_features,
+                         item_features,
+                         neg_item_features,
+                         temperature=0.02,
+                         user_params={
+                             "dims": [256, 128, 64, 32],
+                         },
+                         item_params={
+                             "dims": [256, 128, 64, 32],
+                         })
+
+    trainer = MatchTrainer(model,
+                           mode=1,
+                           optimizer_params={
+                               "lr": learning_rate,
+                               "weight_decay": weight_decay
+                           },
+                           n_epoch=epoch,
+                           device=device,
+                           model_path=save_dir)
+
+    train_dl, test_dl, item_dl = dg.generate_dataloader(test_user, all_item, batch_size=batch_size)
+    trainer.fit(train_dl)
+
+    print("inference embedding")
+    user_embedding = trainer.inference_embedding(model=model, mode="user", data_loader=test_dl, model_path=save_dir)
+    item_embedding = trainer.inference_embedding(model=model, mode="item", data_loader=item_dl, model_path=save_dir)
+    # torch.save(user_embedding.data.cpu(), save_dir + "user_embedding.pth")
+    # torch.save(item_embedding.data.cpu(), save_dir + "item_embedding.pth")
+    match_evaluation(user_embedding, item_embedding, test_user, all_item, topk=10)
 
 
 if __name__ == '__main__':

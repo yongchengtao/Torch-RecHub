@@ -42,7 +42,7 @@ class FaceBookDSSM(torch.nn.Module):
         self.embedding = EmbeddingLayer(user_features + pos_item_features + neg_item_features)
         self.user_mlp = MLP(self.user_dims, output_layer=False, **user_params)
         self.item_mlp = MLP(self.item_dims, output_layer=False, **item_params)
-        self.mode = None
+        self.mode = None  # 输出向量的时候用的
 
     def forward(self, x):
         user_embedding = self.user_tower(x)
@@ -53,7 +53,9 @@ class FaceBookDSSM(torch.nn.Module):
             return pos_item_embedding
 
         # calculate cosine score
+        # 和正样本的分数
         pos_score = torch.mul(user_embedding, pos_item_embedding).sum(dim=1)
+        # 和负样本的分数
         neg_score = torch.mul(user_embedding, neg_item_embedding).sum(dim=1)
 
         return pos_score, neg_score

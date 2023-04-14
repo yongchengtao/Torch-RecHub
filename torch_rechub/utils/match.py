@@ -135,6 +135,7 @@ def generate_seq_feature_match(data,
                     last_col = "neg_items"
                     for _ in range(neg_ratio):
                         sample_copy = copy.deepcopy(sample)
+                        # 最后一列加了负样本id
                         sample_copy.append(neg_list[neg_idx])
                         neg_idx += 1
                         train_set.append(sample_copy)
